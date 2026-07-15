@@ -38,9 +38,51 @@ def save_stats(data):
     except:
         pass
 
-# ========== АВТОУДАЛЕНИЕ СИСТЕМНЫХ СООБЩЕНИЙ (ИСПРАВЛЕНО) ==========
+# ========== УДАЛЕНИЕ ВСЕХ СИСТЕМНЫХ СООБЩЕНИЙ (НОВЫЙ УНИВЕРСАЛЬНЫЙ МЕТОД) ==========
+@dp.message_handler(content_types=types.ContentType.ANY)
+async def delete_all_service_messages(message: types.Message):
+    """Удаляет ВСЕ системные/сервисные сообщения"""
+    
+    # Проверяем, является ли сообщение сервисным
+    is_service = False
+    
+    # Список всех сервисных типов сообщений
+    service_types = [
+        'new_chat_members',
+        'left_chat_member', 
+        'new_chat_title',
+        'new_chat_photo',
+        'delete_chat_photo',
+        'group_chat_created',
+        'supergroup_chat_created',
+        'channel_chat_created',
+        'message_auto_delete_timer_changed',
+        'chat_member_joined',
+        'chat_member_left',
+        'pinned_message'
+    ]
+    
+    # Проверяем тип сообщения
+    if message.content_type in service_types:
+        is_service = True
+    
+    # Также проверяем наличие новых участников (для старых версий)
+    if hasattr(message, 'new_chat_members') and message.new_chat_members:
+        is_service = True
+    
+    # Если это сервисное сообщение - удаляем!
+    if is_service:
+        try:
+            await message.delete()
+            print(f"🗑 Удалено сервисное сообщение: {message.content_type}")
+            return  # Выходим, чтобы не обрабатывать дальше
+        except Exception as e:
+            print(f"❌ Не удалось удалить сервисное сообщение: {e}")
+            return
+
+# ========== ПРИВЕТСТВИЕ НОВЫХ УЧАСТНИКОВ ==========
 @dp.message_handler(content_types=['new_chat_members'])
-async def welcome_and_clean(message: types.Message):
+async def welcome_new_member(message: types.Message):
     global daily_new_members, today
     
     now = datetime.now().date()
@@ -50,18 +92,11 @@ async def welcome_and_clean(message: types.Message):
         daily_left_members = 0
         daily_messages.clear()
     
-    # УДАЛЯЕМ СИСТЕМНОЕ СООБЩЕНИЕ
-    try:
-        await message.delete()
-        print(f"🗑 Удалено системное сообщение о входе")
-    except Exception as e:
-        print(f"❌ Не удалось удалить сообщение: {e}")
-    
     for user in message.new_chat_members:
         if user.id == bot.id:
             continue
         
-        # ПРОВЕРКА НА БОТОВ
+        # Проверка на ботов
         if user.is_bot:
             try:
                 await bot.ban_chat_member(GROUP_ID, user.id)
@@ -84,34 +119,18 @@ async def welcome_and_clean(message: types.Message):
         except Exception as e:
             print(f"❌ Ошибка при отправке приветствия: {e}")
 
-@dp.message_handler(content_types=['left_chat_member'])
-async def goodbye_clean(message: types.Message):
-    global daily_left_members, today
-    
-    now = datetime.now().date()
-    if now != today:
-        today = now
-        daily_new_members = 0
-        daily_left_members = 0
-        daily_messages.clear()
-    
-    # УДАЛЯЕМ СИСТЕМНОЕ СООБЩЕНИЕ О ВЫХОДЕ
-    try:
-        await message.delete()
-        print(f"🗑 Удалено системное сообщение о выходе")
-    except Exception as e:
-        print(f"❌ Не удалось удалить сообщение: {e}")
-    
-    daily_left_members += 1
-
-# ========== ЗАЩИТА ОТ СПАМА - ТОЛЬКО ПРЕДУПРЕЖДЕНИЯ (БЕЗ БАНА) ==========
+# ========== ЗАЩИТА ОТ СПАМА - ТОЛЬКО ПРЕДУПРЕЖДЕНИЯ ==========
 user_last_msg = {}
 user_warns = {}
-user_warn_messages = {}  # Храним ID сообщений с предупреждениями
+user_warn_messages = {}
 
 @dp.message_handler()
 async def anti_spam(message: types.Message):
     if message.chat.id != GROUP_ID:
+        return
+    
+    # Если это сервисное сообщение - пропускаем
+    if message.content_type in ['new_chat_members', 'left_chat_member', 'new_chat_title', 'group_chat_created']:
         return
     
     global daily_messages, today
@@ -127,10 +146,6 @@ async def anti_spam(message: types.Message):
     if message.from_user.id in ADMIN_IDS or message.from_user.is_bot:
         return
     
-    # Пропускаем служебные сообщения
-    if message.content_type not in ['text', 'photo', 'video', 'document', 'sticker']:
-        return
-    
     user_id = message.from_user.id
     daily_messages[user_id] += 1
     
@@ -141,28 +156,23 @@ async def anti_spam(message: types.Message):
         if time_diff < 5:
             user_warns[user_id] = user_warns.get(user_id, 0) + 1
             
-            # Удаляем старое предупреждение, если было
+            # Удаляем старое предупреждение
             if user_id in user_warn_messages:
                 try:
                     await bot.delete_message(GROUP_ID, user_warn_messages[user_id])
                 except:
                     pass
             
-            # Отправляем предупреждение
             warn_count = user_warns[user_id]
             
             if warn_count >= 3:
-                # 3-е предупреждение - финальное
                 warn_msg = await message.answer(
                     f"⚠️ <b>ПОСЛЕДНЕЕ ПРЕДУПРЕЖДЕНИЕ!</b>\n"
                     f"{message.from_user.full_name}, не флуди!\n"
-                    f"Следующее нарушение = бан на 5 минут!",
+                    f"Следующее нарушение = временный бан!",
                     parse_mode="HTML"
                 )
                 user_warn_messages[user_id] = warn_msg.message_id
-                
-                # Разбан через 5 минут (если был забанен)
-                # Можно добавить автоматический временный бан при 4+ нарушении
                 
             elif warn_count == 2:
                 warn_msg = await message.answer(
@@ -190,7 +200,7 @@ async def anti_spam(message: types.Message):
             
             return
         else:
-            # Сброс предупреждений, если прошло больше 5 секунд
+            # Сброс предупреждений
             user_warns[user_id] = 0
             if user_id in user_warn_messages:
                 try:
@@ -201,7 +211,40 @@ async def anti_spam(message: types.Message):
     
     user_last_msg[user_id] = datetime.now()
 
-# ========== КОМАНДА ДЛЯ РУЧНОГО БАНА (ТОЛЬКО АДМИНЫ) ==========
+# ========== КОМАНДЫ МОДЕРАЦИИ ==========
+@dp.message_handler(commands=['mute'])
+async def mute_user(message: types.Message):
+    if message.from_user.id not in ADMIN_IDS:
+        await message.answer("⛔ Только для админов!")
+        return
+    
+    if not message.reply_to_message:
+        await message.answer("❌ Ответь на сообщение пользователя!")
+        return
+    
+    user_id = message.reply_to_message.from_user.id
+    chat_member = await bot.get_chat_member(GROUP_ID, user_id)
+    
+    if chat_member.status in ["administrator", "creator"]:
+        await message.answer("❌ Нельзя замутить администратора или создателя!")
+        return
+    
+    until_date = datetime.now() + timedelta(minutes=5)
+    
+    try:
+        await bot.restrict_chat_member(
+            GROUP_ID, 
+            user_id, 
+            until_date=until_date,
+            can_send_messages=False,
+            can_send_media_messages=False,
+            can_send_other_messages=False,
+            can_add_web_page_previews=False
+        )
+        await message.answer(f"🔇 {message.reply_to_message.from_user.first_name} замучен на 5 минут!")
+    except Exception as e:
+        await message.answer(f"❌ Ошибка: {str(e)[:100]}")
+
 @dp.message_handler(commands=['ban'])
 async def ban_user(message: types.Message):
     if message.from_user.id not in ADMIN_IDS:
@@ -225,7 +268,6 @@ async def ban_user(message: types.Message):
     except Exception as e:
         await message.answer(f"❌ Ошибка: {str(e)[:100]}")
 
-# ========== КОМАНДА ДЛЯ РАЗБАНА ==========
 @dp.message_handler(commands=['unban'])
 async def unban_user(message: types.Message):
     if message.from_user.id not in ADMIN_IDS:
@@ -409,14 +451,14 @@ async def daily_greetings():
 if __name__ == "__main__":
     from aiogram import executor
     print("🛡 Лавка Торговца — бот запущен!")
-    print("✅ Приветствие новых участников (компактное, без превью)")
-    print("✅ Удаление системных сообщений (ИСПРАВЛЕНО!)")
-    print("✅ Защита от спама - только предупреждения (БАНА НЕТ!)")
+    print("✅ Удаление ВСЕХ системных сообщений (ИСПРАВЛЕНО!)")
+    print("✅ Приветствие новых участников")
+    print("✅ Защита от спама - только предупреждения")
     print("✅ Запрет ботов")
     print("✅ Периодические сообщения (каждые 2 часа)")
     print("✅ Утреннее приветствие (9:00) и вечернее прощание (23:00)")
     print("✅ Статистика активности группы (в 23:00)")
-    print("✅ Админ-команды: /ban, /unban")
+    print("✅ Админ-команды: /mute, /ban, /unban")
     
     # Запускаем фоновые задачи
     loop = asyncio.get_event_loop()
