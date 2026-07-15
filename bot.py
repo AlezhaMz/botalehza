@@ -3,8 +3,9 @@ import json
 import os
 from datetime import datetime, timedelta
 from collections import defaultdict
-from aiogram import Bot, Dispatcher, types
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram import Bot, Dispatcher, types, F
+from aiogram.filters import Command
+from aiogram.types import ContentType
 
 # ========== НАСТРОЙКИ ==========
 BOT_TOKEN = "8762058651:AAGTU6a3ktSWK03lszxZa4iPc7-bawGK3Ek"  # ВАШ ТОКЕН
@@ -13,7 +14,7 @@ ADMIN_IDS = [1487417026]  # ВАШ TELEGRAM ID
 # =================================
 
 bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher(bot)
+dp = Dispatcher()  # В aiogram 3.x Dispatcher() без аргументов
 
 # ========== ДАННЫЕ ДЛЯ СТАТИСТИКИ ==========
 STATS_FILE = "stats.json"
@@ -38,50 +39,29 @@ def save_stats(data):
     except:
         pass
 
-# ========== УДАЛЕНИЕ ВСЕХ СИСТЕМНЫХ СООБЩЕНИЙ (НОВЫЙ УНИВЕРСАЛЬНЫЙ МЕТОД) ==========
-@dp.message_handler(content_types=types.ContentType.ANY)
+# ========== УДАЛЕНИЕ ВСЕХ СИСТЕМНЫХ СООБЩЕНИЙ ==========
+@dp.message(F.content_type.in_([
+    ContentType.NEW_CHAT_MEMBERS,
+    ContentType.LEFT_CHAT_MEMBER,
+    ContentType.NEW_CHAT_TITLE,
+    ContentType.NEW_CHAT_PHOTO,
+    ContentType.DELETE_CHAT_PHOTO,
+    ContentType.GROUP_CHAT_CREATED,
+    ContentType.SUPERGROUP_CHAT_CREATED,
+    ContentType.CHANNEL_CHAT_CREATED,
+    ContentType.MESSAGE_AUTO_DELETE_TIMER_CHANGED,
+    ContentType.PINNED_MESSAGE
+]))
 async def delete_all_service_messages(message: types.Message):
     """Удаляет ВСЕ системные/сервисные сообщения"""
-    
-    # Проверяем, является ли сообщение сервисным
-    is_service = False
-    
-    # Список всех сервисных типов сообщений
-    service_types = [
-        'new_chat_members',
-        'left_chat_member', 
-        'new_chat_title',
-        'new_chat_photo',
-        'delete_chat_photo',
-        'group_chat_created',
-        'supergroup_chat_created',
-        'channel_chat_created',
-        'message_auto_delete_timer_changed',
-        'chat_member_joined',
-        'chat_member_left',
-        'pinned_message'
-    ]
-    
-    # Проверяем тип сообщения
-    if message.content_type in service_types:
-        is_service = True
-    
-    # Также проверяем наличие новых участников (для старых версий)
-    if hasattr(message, 'new_chat_members') and message.new_chat_members:
-        is_service = True
-    
-    # Если это сервисное сообщение - удаляем!
-    if is_service:
-        try:
-            await message.delete()
-            print(f"🗑 Удалено сервисное сообщение: {message.content_type}")
-            return  # Выходим, чтобы не обрабатывать дальше
-        except Exception as e:
-            print(f"❌ Не удалось удалить сервисное сообщение: {e}")
-            return
+    try:
+        await message.delete()
+        print(f"🗑 Удалено сервисное сообщение: {message.content_type}")
+    except Exception as e:
+        print(f"❌ Не удалось удалить сервисное сообщение: {e}")
 
 # ========== ПРИВЕТСТВИЕ НОВЫХ УЧАСТНИКОВ ==========
-@dp.message_handler(content_types=['new_chat_members'])
+@dp.message(F.content_type == ContentType.NEW_CHAT_MEMBERS)
 async def welcome_new_member(message: types.Message):
     global daily_new_members, today
     
@@ -124,13 +104,9 @@ user_last_msg = {}
 user_warns = {}
 user_warn_messages = {}
 
-@dp.message_handler()
+@dp.message(F.text)  # Только текстовые сообщения
 async def anti_spam(message: types.Message):
     if message.chat.id != GROUP_ID:
-        return
-    
-    # Если это сервисное сообщение - пропускаем
-    if message.content_type in ['new_chat_members', 'left_chat_member', 'new_chat_title', 'group_chat_created']:
         return
     
     global daily_messages, today
@@ -212,7 +188,7 @@ async def anti_spam(message: types.Message):
     user_last_msg[user_id] = datetime.now()
 
 # ========== КОМАНДЫ МОДЕРАЦИИ ==========
-@dp.message_handler(commands=['mute'])
+@dp.message(Command('mute'))
 async def mute_user(message: types.Message):
     if message.from_user.id not in ADMIN_IDS:
         await message.answer("⛔ Только для админов!")
@@ -245,7 +221,7 @@ async def mute_user(message: types.Message):
     except Exception as e:
         await message.answer(f"❌ Ошибка: {str(e)[:100]}")
 
-@dp.message_handler(commands=['ban'])
+@dp.message(Command('ban'))
 async def ban_user(message: types.Message):
     if message.from_user.id not in ADMIN_IDS:
         await message.answer("⛔ Только для админов!")
@@ -268,7 +244,7 @@ async def ban_user(message: types.Message):
     except Exception as e:
         await message.answer(f"❌ Ошибка: {str(e)[:100]}")
 
-@dp.message_handler(commands=['unban'])
+@dp.message(Command('unban'))
 async def unban_user(message: types.Message):
     if message.from_user.id not in ADMIN_IDS:
         await message.answer("⛔ Только для админов!")
@@ -450,8 +426,13 @@ async def daily_greetings():
 # ========== ЗАПУСК ==========
 if __name__ == "__main__":
     from aiogram import executor
+    import logging
+    
+    # Настройка логирования
+    logging.basicConfig(level=logging.INFO)
+    
     print("🛡 Лавка Торговца — бот запущен!")
-    print("✅ Удаление ВСЕХ системных сообщений (ИСПРАВЛЕНО!)")
+    print("✅ Удаление ВСЕХ системных сообщений")
     print("✅ Приветствие новых участников")
     print("✅ Защита от спама - только предупреждения")
     print("✅ Запрет ботов")
@@ -466,4 +447,5 @@ if __name__ == "__main__":
     loop.create_task(daily_greetings())
     loop.create_task(send_daily_stats())
     
+    # Запускаем бота
     executor.start_polling(dp, skip_updates=True)
