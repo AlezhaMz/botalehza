@@ -9,16 +9,16 @@ from aiogram.types import Message, ChatMemberUpdated
 
 # ========== НАСТРОЙКИ ==========
 BOT_TOKEN = "8762058651:AAGTU6a3ktSWK03lszxZa4iPc7-bawGK3Ek"  # ВАШ ТОКЕН
-GROUP_ID = -1003666056371  # ID ГРУППЫ
-ADMIN_IDS = [1487417026]  # ВАШ TELEGRAM ID
+GROUP_ID = -1003666056371
+ADMIN_IDS = [1487417026]
 
 # ========== ID ТЕМ ==========
-REVIEWS_TOPIC_ID = 262      # ID темы "Отзывы"
-TRADE_TOPIC_ID = 3869       # ID темы "Trade чат"
+REVIEWS_TOPIC_ID = 262
+TRADE_TOPIC_ID = 3869
 
 # ========== НАСТРОЙКИ ДЛЯ TRADE ЧАТ ==========
 ALLOWED_TAGS = ["#продам", "#куплю", "#обменяю"]
-RULES_URL = "https://t.me/ShopkeepersCache/3869/3870"  # Ссылка на правила
+RULES_URL = "https://t.me/ShopkeepersCache/3869/3870"
 
 # =====================================================
 
@@ -171,7 +171,7 @@ async def trade_chat_reminder(message: types.Message):
     current_time = datetime.now()
     if hasattr(trade_chat_reminder, 'last_reply_time'):
         time_diff = (current_time - trade_chat_reminder.last_reply_time).seconds
-        if time_diff < 300:  # 5 минут
+        if time_diff < 300:
             return
     trade_chat_reminder.last_reply_time = current_time
     
@@ -290,7 +290,7 @@ CONFIG_FILE = "config.json"
 
 def load_config():
     default = {
-        "periodic_messages": [],  # ← ПУСТОЙ СПИСОК (сообщения отключены)
+        "periodic_messages": [],
         "current_index": 0,
         "last_message_id": None
     }
@@ -381,13 +381,12 @@ async def send_daily_stats():
             print(f"Ошибка в статистике: {e}")
             await asyncio.sleep(60)
 
-# ========== УТРЕННИЕ И ВЕЧЕРНИЕ СООБЩЕНИЯ (ПО МОСКВЕ) ==========
+# ========== УТРЕННИЕ И ВЕЧЕРНИЕ ==========
 async def daily_greetings():
     last_greeting = None
     last_farewell = None
     while True:
         try:
-            # Московское время (UTC+3) — БЕЗ ПРЕДУПРЕЖДЕНИЙ
             now_utc = datetime.now(timezone.utc)
             now_msk = now_utc + timedelta(hours=3)
             now_time = now_msk.time()
