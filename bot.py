@@ -51,9 +51,9 @@ async def welcome_new_members(message: types.Message):
         # Приветствие с ссылкой на профиль
         greeting = (
             f"👋 Приветствуем <a href='tg://user?id={user.id}'>{user.full_name}</a>, в Лавке Главного Торговца! Приятного общения с пользователями чата.\n\n"
-            f"• <a href='https://t.me/ShopkeepersCache/17163'>Узнать о нас подробнее</a>\n"
-            f"• <a href='https://t.me/ShopkeepersCache'>Ассортимент лавки</a>\n"
-            f"• <a href='https://t.me/StashShopkeepers'>Тайник Торговца</a>"
+            f"➤ <a href='https://t.me/ShopkeepersCache/17163'>Узнать о нас подробнее</a>\n"
+            f"➤ <a href='https://t.me/ShopkeepersCache'>Ассортимент лавки</a>\n"
+            f"➤ <a href='https://t.me/StashShopkeepers'>Тайник Торговца</a>"
         )
         try:
             await message.answer(greeting, parse_mode="HTML", disable_web_page_preview=True)
@@ -206,9 +206,9 @@ async def warn_user(message: types.Message):
 
 # ========== ПЕРИОДИЧЕСКИЕ СООБЩЕНИЯ ==========
 MESSAGES = [
-    "➤ Ищете компанию для Dota 2? Присоединяйтесь к нашему <a href='https://discord.gg/AtQypC6jK'>Discord-серверу</a>",
-    "➤ Скидки и новости в Telegram-канале <a href='https://t.me/StashShopkeepers'>«Тайны Торговца»</a>",
-    "➤ Общайтесь, торгуйте, находите друзей по Dota 2 в нашем чате!"
+    "➤ Ищете, с кем зарубиться в Dota 2?\nУ нас уютный Discord-сервер, где всегда найдётся пати, поддержка и хорошее настроение.\nЖдём тебя! Заходи в наш <a href='https://discord.gg/AtQypC6jK'>Discord-сервер</a>",
+    "➤ Не пропусти новые скидки и актуальные новости!\nПодписывайся на наш Telegram-канал «Тайны Торговца» — здесь всё появляется первым.\nЖми на <a href='https://t.me/StashShopkeepers'>ссылку</a> и будь в плюсе! 🔥",
+    "➤ Общайтесь, торгуйте, находите тиммейтов для Dota 2 — у нас уютно всем!\nА если заметите нарушение правил чата — не молчите, сразу сообщите @AIezha. Вместе сделаем сообщество лучше! 🤝"
 ]
 
 async def periodic_messages():
@@ -217,7 +217,7 @@ async def periodic_messages():
     while True:
         try:
             now = datetime.now()
-            if 9 <= now.hour < 23:
+            if 5 <= now.hour < 19:
                 if last_msg_id:
                     try:
                         await bot.delete_message(GROUP_ID, last_msg_id)
@@ -250,9 +250,10 @@ async def daily_greetings():
             if now.hour == 5 and now.minute == 0 and last_greeting != now.date():
                 await bot.send_message(
                     GROUP_ID,
-                    "☀️ С доброе утро чат!\n"
-                    "Лавка снова готова к новым свершениям!\n"
-                    "Хороших покупок и приятной игры! 🎮",
+                    "Всем привет! Выспался, зарядился и снова в строю! ☀️\n"
+                    "➤ Рассвет встретил, слово сдержал. Доброе утро, народ!\n"
+                    "➤ Без меня скучали? Признавайтесь!\n"
+                    "➤ Готовься - сегодня будет интересно, я обещаю...",
                     parse_mode="HTML"
                 )
                 last_greeting = now.date()
@@ -262,9 +263,10 @@ async def daily_greetings():
             if now.hour == 19 and now.minute == 0 and last_farewell != now.date():
                 await bot.send_message(
                     GROUP_ID,
-                    "🌙 Лавка закрывается!\n"
-                    "Спокойной ночи и сладких снов!\n"
-                    "До встречи в завтрашнем дне! 😴",
+                    "Всем бай-бай! Отключаюсь до утра, чтобы дать вашим уведомлениям отдохнуть. 😴\n"
+                    "➤ Не шалите пока меня нет!\n"
+                    "➤ Завтра я открою для тебя новые тайны...\n"
+                    "➤ Встретимся на первых лучах солнца. Сладких снов!",
                     parse_mode="HTML"
                 )
                 last_farewell = now.date()
@@ -275,13 +277,13 @@ async def daily_greetings():
             print(f"Ошибка в greetings: {e}")
             await asyncio.sleep(60)
 
-# ========== СТАТИСТИКА В 23:00 ==========
+# ========== СТАТИСТИКА В 19:00 ==========
 async def daily_stats():
     global daily_messages, daily_new_members, today
     while True:
         try:
             now = datetime.now()
-            if now.hour == 23 and now.minute == 0:
+            if now.hour == 19 and now.minute == 0:
                 members = await bot.get_chat_member_count(GROUP_ID)
                 top_user = "Нет сообщений"
                 top_count = 0
@@ -318,7 +320,7 @@ async def main():
     print("✅ /ban, /mute, /warn для админов")
     print("✅ Анти-спам (бан за 3 сообщения за 5 секунд)")
     print("✅ Утро в 05:00, Вечер в 19:00")
-    print("✅ Статистика в 23:00")
+    print("✅ Статистика в 19:00")
     print("✅ Периодические сообщения каждые 2 часа")
     
     asyncio.create_task(periodic_messages())
