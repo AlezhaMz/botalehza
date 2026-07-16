@@ -1,44 +1,32 @@
 import asyncio
-import json
-import os
 from datetime import datetime, timedelta
 from collections import defaultdict
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 
-# ========== НАСТРОЙКИ ==========
-BOT_TOKEN = "8762058651:AAGTU6a3ktSWK03lszxZa4iPc7-bawGK3Ek"  # ЗАМЕНИ НА НОВЫЙ ТОКЕН!
-GROUP_ID = -1003666056371
-ADMIN_IDS = [1487417026]
-# =================================
+# ========== НАСТРОЙКИ (ЗАМЕНИ НА СВОИ) ==========
+BOT_TOKEN = "8762058651:AAG_rvoUoqFY3Be13ueYk32I-2Jriwxecn4"  # Получи у @BotFather
+GROUP_ID = -1003666056371        # ID твоей группы
+ADMIN_IDS = [1487417026]         # Твой Telegram ID
+# ====================================================
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
-# ========== ДАННЫЕ ==========
+# ========== ДАННЫЕ ДЛЯ СТАТИСТИКИ ==========
 daily_messages = defaultdict(int)
 daily_new_members = 0
 today = datetime.now().date()
 
-# ========== УДАЛЕНИЕ СИСТЕМНЫХ СООБЩЕНИЙ ==========
-@dp.message(F.content_type.in_([
-    types.ContentType.NEW_CHAT_MEMBERS,
-    types.ContentType.LEFT_CHAT_MEMBER
-]))
-async def delete_service_messages(message: types.Message):
-    """Удаляет сообщения о входе/выходе"""
-    try:
-        await message.delete()
-        print(f"🗑 Удалено: {message.content_type}")
-    except:
-        pass
+# ========== ДАННЫЕ ДЛЯ АНТИ-СПАМА ==========
+user_last_msg = {}
+user_warns = {}
 
-# ========== ПРИВЕТСТВИЕ ==========
+# ========== ПРИВЕТСТВИЕ НОВЫХ УЧАСТНИКОВ ==========
 @dp.message(F.content_type == types.ContentType.NEW_CHAT_MEMBERS)
-async def welcome_user(message: types.Message):
+async def welcome_new_members(message: types.Message):
     global daily_new_members, today
     
-    # Проверка смены дня
     now = datetime.now().date()
     if now != today:
         today = now
@@ -49,7 +37,7 @@ async def welcome_user(message: types.Message):
         if user.id == bot.id:
             continue
         
-        # Проверка на ботов
+        # Блокировка ботов
         if user.is_bot:
             try:
                 await bot.ban_chat_member(GROUP_ID, user.id)
@@ -60,31 +48,161 @@ async def welcome_user(message: types.Message):
         
         daily_new_members += 1
         
-        # Приветствие
+        # Приветствие с ссылкой на профиль
         greeting = (
-            f"👋 Приветствуем {user.full_name}, в Лавке главного торговца!\n\n"
-            f"• <a href='https://t.me/ShopkeepersCache/17163'>Узнать о нас</a>\n"
-            f"• <a href='https://t.me/ShopkeepersCache'>Ассортимент</a>\n"
-            f"• <a href='https://t.me/StashShopkeepers'>Наш канал</a>"
+            f"👋 Приветствуем <a href='tg://user?id={user.id}'>{user.full_name}</a>, в Лавке Главного Торговца!\n\n"
+            f"• <a href='https://t.me/ShopkeepersCache/17163'>Узнать о нас подробнее</a>\n"
+            f"• <a href='https://t.me/ShopkeepersCache'>Ассортимент лавки</a>\n"
+            f"• <a href='https://t.me/StashShopkeepers'>Тайник Торговца</a>"
         )
         try:
             await message.answer(greeting, parse_mode="HTML", disable_web_page_preview=True)
         except:
             pass
+    
+    # Удаляем системное сообщение
+    try:
+        await message.delete()
+    except:
+        pass
 
-# ========== СТАТИСТИКА СООБЩЕНИЙ ==========
+# ========== УДАЛЕНИЕ СООБЩЕНИЙ О ВЫХОДЕ ==========
+@dp.message(F.content_type == types.ContentType.LEFT_CHAT_MEMBER)
+async def delete_left_message(message: types.Message):
+    try:
+        await message.delete()
+    except:
+        pass
+
+# ========== ПОДСЧЁТ СООБЩЕНИЙ ДЛЯ СТАТИСТИКИ ==========
 @dp.message(F.text)
 async def count_messages(message: types.Message):
     if message.chat.id != GROUP_ID:
         return
-    
-    if message.from_user.is_bot:
+    if message.from_user.is_bot or message.from_user.id in ADMIN_IDS:
         return
-    
-    if message.from_user.id in ADMIN_IDS:
-        return
-    
     daily_messages[message.from_user.id] += 1
+
+# ========== АНТИ-СПАМ ==========
+@dp.message(F.text)
+async def anti_spam(message: types.Message):
+    if message.chat.id != GROUP_ID:
+        return
+    
+    if message.from_user.id in ADMIN_IDS or message.from_user.is_bot:
+        return
+    
+    user_id = message.from_user.id
+    now = datetime.now()
+    
+    if user_id in user_last_msg:
+        time_diff = (now - user_last_msg[user_id]).seconds
+        if time_diff < 5:
+            user_warns[user_id] = user_warns.get(user_id, 0) + 1
+            if user_warns[user_id] >= 3:
+                await bot.ban_chat_member(GROUP_ID, user_id)
+                await message.answer(f"🚫 {message.from_user.full_name} забанен за спам!")
+                del user_last_msg[user_id]
+                del user_warns[user_id]
+                return
+            else:
+                await message.delete()
+                await message.answer(f"⚠️ {message.from_user.full_name}, не спамь! Предупреждение {user_warns[user_id]}/3")
+                return
+        else:
+            user_warns[user_id] = 0
+    user_last_msg[user_id] = now
+
+# ========== /mute - ОТКЛЮЧИТЬ ЗВУК НА 5 МИНУТ ==========
+@dp.message(Command('mute'))
+async def mute_user(message: types.Message):
+    if message.from_user.id not in ADMIN_IDS:
+        await message.answer("⛔ Только для админов!")
+        return
+    
+    if not message.reply_to_message:
+        await message.answer("❌ Ответь на сообщение пользователя!")
+        return
+    
+    user_id = message.reply_to_message.from_user.id
+    chat_member = await bot.get_chat_member(GROUP_ID, user_id)
+    
+    if chat_member.status in ["administrator", "creator"]:
+        await message.answer("❌ Нельзя замутить администратора!")
+        return
+    
+    until_date = datetime.now() + timedelta(minutes=5)
+    
+    try:
+        await bot.restrict_chat_member(
+            GROUP_ID, 
+            user_id, 
+            until_date=until_date,
+            can_send_messages=False,
+            can_send_media_messages=False,
+            can_send_other_messages=False,
+            can_add_web_page_previews=False
+        )
+        await message.answer(f"🔇 {message.reply_to_message.from_user.first_name} замучен на 5 минут!")
+    except Exception as e:
+        await message.answer(f"❌ Ошибка: {str(e)[:100]}")
+
+# ========== /ban - ЗАБАНИТЬ ==========
+@dp.message(Command('ban'))
+async def ban_user(message: types.Message):
+    if message.from_user.id not in ADMIN_IDS:
+        await message.answer("⛔ Только для админов!")
+        return
+    
+    if not message.reply_to_message:
+        await message.answer("❌ Ответь на сообщение пользователя!")
+        return
+    
+    user_id = message.reply_to_message.from_user.id
+    chat_member = await bot.get_chat_member(GROUP_ID, user_id)
+    
+    if chat_member.status in ["administrator", "creator"]:
+        await message.answer("❌ Нельзя забанить администратора!")
+        return
+    
+    try:
+        await bot.ban_chat_member(GROUP_ID, user_id)
+        await message.answer(f"🚫 {message.reply_to_message.from_user.first_name} забанен!")
+    except Exception as e:
+        await message.answer(f"❌ Ошибка: {str(e)[:100]}")
+
+# ========== /warn - ПРЕДУПРЕЖДЕНИЕ ==========
+warnings = {}
+
+@dp.message(Command('warn'))
+async def warn_user(message: types.Message):
+    if message.from_user.id not in ADMIN_IDS:
+        await message.answer("⛔ Только для админов!")
+        return
+    
+    if not message.reply_to_message:
+        await message.answer("❌ Ответь на сообщение пользователя!")
+        return
+    
+    user_id = message.reply_to_message.from_user.id
+    user_name = message.reply_to_message.from_user.first_name
+    
+    if user_id in ADMIN_IDS:
+        await message.answer("❌ Нельзя выдать предупреждение администратору!")
+        return
+    
+    warnings[user_id] = warnings.get(user_id, 0) + 1
+    warn_count = warnings[user_id]
+    
+    await message.answer(f"⚠️ {user_name} получил предупреждение! ({warn_count}/3)")
+    
+    if warn_count >= 3:
+        try:
+            await bot.ban_chat_member(GROUP_ID, user_id)
+            await message.answer(f"🚫 {user_name} забанен за 3 предупреждения!")
+            del warnings[user_id]
+        except:
+            pass
 
 # ========== ПЕРИОДИЧЕСКИЕ СООБЩЕНИЯ ==========
 MESSAGES = [
@@ -96,21 +214,15 @@ MESSAGES = [
 async def periodic_messages():
     index = 0
     last_msg_id = None
-    
     while True:
         try:
             now = datetime.now()
-            
-            # Работаем с 9:00 до 23:00
             if 9 <= now.hour < 23:
-                # Удаляем предыдущее сообщение
                 if last_msg_id:
                     try:
                         await bot.delete_message(GROUP_ID, last_msg_id)
                     except:
                         pass
-                
-                # Отправляем новое
                 msg = await bot.send_message(
                     GROUP_ID,
                     MESSAGES[index % len(MESSAGES)],
@@ -119,69 +231,58 @@ async def periodic_messages():
                 )
                 last_msg_id = msg.message_id
                 index += 1
-                
-                await asyncio.sleep(7200)  # 2 часа
+                await asyncio.sleep(7200)
             else:
-                await asyncio.sleep(60)  # Ночью проверяем каждую минуту
-                
+                await asyncio.sleep(60)
         except Exception as e:
-            print(f"Ошибка: {e}")
+            print(f"Ошибка в periodic: {e}")
             await asyncio.sleep(60)
 
-# ========== УТРО И ВЕЧЕР ==========
+# ========== УТРЕННЕЕ ПРИВЕТСТВИЕ В 05:00 ==========
 async def daily_greetings():
     last_greeting = None
     last_farewell = None
-    
     while True:
         try:
             now = datetime.now()
             
-            # Утро 9:00
-            if now.hour == 9 and now.minute == 0 and last_greeting != now.date():
+            # Утро в 05:00
+            if now.hour == 5 and now.minute == 0 and last_greeting != now.date():
                 await bot.send_message(
                     GROUP_ID,
-                    "☀️ <b>Доброе утро!</b>\n\n"
-                    "Лавка открыта!\n"
+                    "☀️ С доброе утро чат!\n"
+                    "Лавка снова готова к новым свершениям!\n"
                     "Хороших покупок и приятной игры! 🎮",
                     parse_mode="HTML"
                 )
                 last_greeting = now.date()
                 await asyncio.sleep(60)
             
-            # Вечер 23:00
-            if now.hour == 23 and now.minute == 0 and last_farewell != now.date():
+            # Вечер в 19:00
+            if now.hour == 19 and now.minute == 0 and last_farewell != now.date():
                 await bot.send_message(
                     GROUP_ID,
-                    "🌙 <b>Лавка закрывается!</b>\n\n"
-                    "Спокойной ночи!\n"
-                    "До встречи завтра! 😴",
+                    "🌙 Лавка закрывается!\n"
+                    "Спокойной ночи и сладких снов!\n"
+                    "До встречи в завтрашнем дне! 😴",
                     parse_mode="HTML"
                 )
                 last_farewell = now.date()
                 await asyncio.sleep(60)
             
             await asyncio.sleep(30)
-            
         except Exception as e:
-            print(f"Ошибка: {e}")
+            print(f"Ошибка в greetings: {e}")
             await asyncio.sleep(60)
 
-# ========== СТАТИСТИКА ==========
+# ========== СТАТИСТИКА В 23:00 ==========
 async def daily_stats():
     global daily_messages, daily_new_members, today
-    
     while True:
         try:
             now = datetime.now()
-            
             if now.hour == 23 and now.minute == 0:
-                try:
-                    members = await bot.get_chat_member_count(GROUP_ID)
-                except:
-                    members = 0
-                
-                # Находим самого активного
+                members = await bot.get_chat_member_count(GROUP_ID)
                 top_user = "Нет сообщений"
                 top_count = 0
                 if daily_messages:
@@ -192,46 +293,37 @@ async def daily_stats():
                         top_user = user.first_name or "Неизвестный"
                     except:
                         top_user = "Неизвестный"
-                
                 stats = (
-                    "📊 <b>Статистика за сегодня</b>\n\n"
+                    f"📊 <b>Статистика за сегодня</b>\n\n"
                     f"👥 Участников: {members}\n"
                     f"💬 Сообщений: {sum(daily_messages.values())}\n"
                     f"🆕 Новых: {daily_new_members}\n"
                     f"🏆 Самый активный: {top_user} ({top_count} сообщений)\n"
                     f"📅 {now.strftime('%d.%m.%Y')}"
                 )
-                
                 await bot.send_message(GROUP_ID, stats, parse_mode="HTML")
-                
-                # Очищаем данные
                 daily_messages.clear()
                 daily_new_members = 0
                 today = datetime.now().date() + timedelta(days=1)
-                
                 await asyncio.sleep(60)
-            
             await asyncio.sleep(30)
-            
         except Exception as e:
-            print(f"Ошибка: {e}")
+            print(f"Ошибка в stats: {e}")
             await asyncio.sleep(60)
 
 # ========== ЗАПУСК ==========
 async def main():
     print("🛡 Бот запущен!")
-    print("✅ Удаление системных сообщений")
-    print("✅ Приветствие новых участников")
-    print("✅ Периодические сообщения (каждые 2 часа)")
-    print("✅ Утреннее/вечернее приветствие")
+    print("✅ Приветствие с ссылкой на профиль")
+    print("✅ /ban, /mute, /warn для админов")
+    print("✅ Анти-спам (бан за 3 сообщения за 5 секунд)")
+    print("✅ Утро в 05:00, Вечер в 19:00")
     print("✅ Статистика в 23:00")
+    print("✅ Периодические сообщения каждые 2 часа")
     
-    # Запускаем фоновые задачи
     asyncio.create_task(periodic_messages())
     asyncio.create_task(daily_greetings())
     asyncio.create_task(daily_stats())
-    
-    # Запускаем бота
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
