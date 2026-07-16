@@ -50,7 +50,7 @@ async def welcome_new_members(message: types.Message):
         
         # Приветствие с ссылкой на профиль
         greeting = (
-            f"👋 Приветствуем <a href='tg://user?id={user.id}'>{user.full_name}</a>, в Лавке Главного Торговца!\n\n"
+            f"👋 Приветствуем <a href='tg://user?id={user.id}'>{user.full_name}</a>, в Лавке Главного Торговца! Приятного общения с пользователями чата.\n\n"
             f"• <a href='https://t.me/ShopkeepersCache/17163'>Узнать о нас подробнее</a>\n"
             f"• <a href='https://t.me/ShopkeepersCache'>Ассортимент лавки</a>\n"
             f"• <a href='https://t.me/StashShopkeepers'>Тайник Торговца</a>"
