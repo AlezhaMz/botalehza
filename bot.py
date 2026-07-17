@@ -278,42 +278,6 @@ async def daily_greetings():
             print(f"Ошибка в greetings: {e}")
             await asyncio.sleep(60)
 
-# ========== СТАТИСТИКА В 19:00 ==========
-async def daily_stats():
-    global daily_messages, daily_new_members, today
-    while True:
-        try:
-            now = datetime.now()
-            if now.hour == 19 and now.minute == 0:
-                members = await bot.get_chat_member_count(GROUP_ID)
-                top_user = "Нет сообщений"
-                top_count = 0
-                if daily_messages:
-                    top_id = max(daily_messages, key=daily_messages.get)
-                    top_count = daily_messages[top_id]
-                    try:
-                        user = await bot.get_chat(top_id)
-                        top_user = user.first_name or "Неизвестный"
-                    except:
-                        top_user = "Неизвестный"
-                stats = (
-                    f"📊 <b>Статистика за сегодня</b>\n\n"
-                    f"👥 Участников: {members}\n"
-                    f"💬 Сообщений: {sum(daily_messages.values())}\n"
-                    f"🆕 Новых: {daily_new_members}\n"
-                    f"🏆 Самый активный: {top_user} ({top_count} сообщений)\n"
-                    f"📅 {now.strftime('%d.%m.%Y')}"
-                )
-                await bot.send_message(GROUP_ID, stats, parse_mode="HTML")
-                daily_messages.clear()
-                daily_new_members = 0
-                today = datetime.now().date() + timedelta(days=1)
-                await asyncio.sleep(60)
-            await asyncio.sleep(30)
-        except Exception as e:
-            print(f"Ошибка в stats: {e}")
-            await asyncio.sleep(60)
-
 # ========== ЗАПУСК ==========
 async def main():
     print("🛡 Бот запущен!")
@@ -321,12 +285,10 @@ async def main():
     print("✅ /ban, /mute, /warn для админов")
     print("✅ Анти-спам (бан за 3 сообщения за 5 секунд)")
     print("✅ Утро в 05:00, Вечер в 19:00")
-    print("✅ Статистика в 19:00")
     print("✅ Периодические сообщения каждые 2 часа")
     
     asyncio.create_task(periodic_messages())
     asyncio.create_task(daily_greetings())
-    asyncio.create_task(daily_stats())
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
