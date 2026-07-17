@@ -50,10 +50,10 @@ async def welcome_new_members(message: types.Message):
         
         # Приветствие с ссылкой на профиль
         greeting = (
-            f"👋 Приветствуем <a href='tg://user?id={user.id}'>{user.full_name}</a>, в Лавке Главного Торговца! Приятного общения с пользователями чата.\n\n"
+            f"👋 Приветствуем <a href='tg://user?id={user.id}'>{user.full_name}</a>, в Лавке Главного Торговца! Можешь пообщаться с нами в чате или\n"
             f"➤ <a href='https://t.me/ShopkeepersCache/17163'>Узнать о нас подробнее</a>\n"
-            f"➤ <a href='https://t.me/ShopkeepersCache'>Ассортимент лавки</a>\n"
-            f"➤ <a href='https://t.me/StashShopkeepers'>Тайник Торговца</a>"
+            f"➤ <a href='https://t.me/ShopkeepersCache'>Ознакомится с каталогом лавки</a>\n"
+            f"➤ <a href='https://t.me/StashShopkeepers'>Зайти в Тайник Торговца</a>"
         )
         try:
             await message.answer(greeting, parse_mode="HTML", disable_web_page_preview=True)
@@ -209,6 +209,7 @@ MESSAGES = [
     "➤ Ищете, с кем зарубиться в Dota 2?\nУ нас уютный Discord-сервер, где всегда найдётся пати, поддержка и хорошее настроение.\nЖдём тебя! Заходи в наш <a href='https://discord.gg/AtQypC6jK'>Discord-сервер</a>",
     "➤ Не пропусти новые скидки и актуальные новости!\nПодписывайся на наш Telegram-канал «Тайны Торговца» — здесь всё появляется первым.\nЖми на <a href='https://t.me/StashShopkeepers'>ссылку</a> и будь в плюсе! 🔥",
     "➤ Общайтесь, торгуйте, находите тиммейтов для Dota 2 — у нас уютно всем!\nА если заметите нарушение правил чата — не молчите, сразу сообщите @AIezha. Вместе сделаем сообщество лучше! 🤝"
+    "➤ Больше контента в других форматах!\nСмотри развлекательный контент по Dota 2 в наших YouTube и TikTok\n➤ <a href='https://youtube.com/@shopkeeperscache?si=aXYmxlKyxbo422Wb'>Перейти в YouTube</a>\n➤ <a href='https://www.tiktok.com/@shopkeeperscache?_r=1&_t=ZS-986eaBQ3xOn'>Перейти в TikTok</a>"
 ]
 
 async def periodic_messages():
