@@ -3,24 +3,48 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
+import os
 
-# ========== НАСТРОЙКИ (ЗАМЕНИ НА СВОИ) ==========
-BOT_TOKEN = "8762058651:AAG_rvoUoqFY3Be13ueYk32I-2Jriwxecn4"  # Получи у @BotFather
-GROUP_ID = -1003666056371        # ID твоей группы
-ADMIN_IDS = [1487417026]         # Твой Telegram ID
-# ====================================================
+# ========== НАСТРОЙКИ ==========
+BOT_TOKEN = "8762058651:AAG_rvoUoqFY3Be13ueYk32I-2Jriwxecn4"
+GROUP_ID = -1003666056371
+ADMIN_IDS = [1487417026]
+# =================================
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
-# ========== ДАННЫЕ ДЛЯ СТАТИСТИКИ ==========
+# ========== ДАННЫЕ ==========
 daily_messages = defaultdict(int)
 daily_new_members = 0
 today = datetime.now().date()
-
-# ========== ДАННЫЕ ДЛЯ АНТИ-СПАМА ==========
 user_last_msg = {}
 user_warns = {}
+warnings = {}
+
+# ========== ПЕРИОДИЧЕСКИЕ СООБЩЕНИЯ С ВАШИМИ ЛОКАЛЬНЫМИ ФОТО ==========
+PERIODIC_CONTENT = [
+    {
+        "text": "➤ Больше контента в других форматах!\nСмотри развлекательный контент по Dota 2 в наших YouTube и TikTok аккаунтах.\n➤ Перейти в YouTube: https://youtube.com/@shopkeeperscache\n➤ Перейти в TikTok: https://www.tiktok.com/@shopkeeperscache",
+        "local_file": "1592303186729(j).jpg",
+        "type": "photo"
+    },
+    {
+        "text": "➤ Не пропусти новые скидки и актуальные новости!\nПодписывайся на наш Telegram-канал «Тайны Торговца» — здесь всё появляется первым.\nЖми на ссылку и будь в плюсе! 🔥\nhttps://t.me/StashShopkeepers",
+        "local_file": "1592303186729.png",
+        "type": "photo"
+    },
+    {
+        "text": "➤ Общайтесь, торгуйте, находите тиммейтов для Dota 2 — у нас уютно всем!\nА если заметите нарушение правил чата — не молчите, сразу сообщите @AIezha. Вместе сделаем сообщество лучше! 🤝",
+        "local_file": "Screenshot 2026-07-18 173906.png",
+        "type": "photo"
+    },
+    {
+        "text": "➤ Ищете, с кем зарубиться в Dota 2?\nУ нас уютный Discord-сервер, где всегда найдётся пати, поддержка и хорошее настроение.\nЖдём тебя! Заходи: https://discord.gg/AtQypC6jK",
+        "local_file": "Screenshot 2026-07-18 174019.png",
+        "type": "photo"
+    }
+]
 
 # ========== ПРИВЕТСТВИЕ НОВЫХ УЧАСТНИКОВ ==========
 @dp.message(F.content_type == types.ContentType.NEW_CHAT_MEMBERS)
@@ -37,7 +61,6 @@ async def welcome_new_members(message: types.Message):
         if user.id == bot.id:
             continue
         
-        # Блокировка ботов
         if user.is_bot:
             try:
                 await bot.ban_chat_member(GROUP_ID, user.id)
@@ -48,7 +71,6 @@ async def welcome_new_members(message: types.Message):
         
         daily_new_members += 1
         
-        # Приветствие с ссылкой на профиль
         greeting = (
             f"👋 Приветствуем <a href='tg://user?id={user.id}'>{user.full_name}</a>, в Лавке Главного Торговца! Можешь пообщаться с нами в чате или\n"
             f"➤ <a href='https://t.me/ShopkeepersCache/17163'>Узнать о нас подробнее</a>\n"
@@ -60,7 +82,6 @@ async def welcome_new_members(message: types.Message):
         except:
             pass
     
-    # Удаляем системное сообщение
     try:
         await message.delete()
     except:
@@ -74,7 +95,7 @@ async def delete_left_message(message: types.Message):
     except:
         pass
 
-# ========== ПОДСЧЁТ СООБЩЕНИЙ ДЛЯ СТАТИСТИКИ ==========
+# ========== ПОДСЧЁТ СООБЩЕНИЙ ==========
 @dp.message(F.text)
 async def count_messages(message: types.Message):
     if message.chat.id != GROUP_ID:
@@ -113,7 +134,7 @@ async def anti_spam(message: types.Message):
             user_warns[user_id] = 0
     user_last_msg[user_id] = now
 
-# ========== /mute - ОТКЛЮЧИТЬ ЗВУК НА 5 МИНУТ ==========
+# ========== /MUTE ==========
 @dp.message(Command('mute'))
 async def mute_user(message: types.Message):
     if message.from_user.id not in ADMIN_IDS:
@@ -147,7 +168,7 @@ async def mute_user(message: types.Message):
     except Exception as e:
         await message.answer(f"❌ Ошибка: {str(e)[:100]}")
 
-# ========== /ban - ЗАБАНИТЬ ==========
+# ========== /BAN ==========
 @dp.message(Command('ban'))
 async def ban_user(message: types.Message):
     if message.from_user.id not in ADMIN_IDS:
@@ -171,9 +192,7 @@ async def ban_user(message: types.Message):
     except Exception as e:
         await message.answer(f"❌ Ошибка: {str(e)[:100]}")
 
-# ========== /warn - ПРЕДУПРЕЖДЕНИЕ ==========
-warnings = {}
-
+# ========== /WARN ==========
 @dp.message(Command('warn'))
 async def warn_user(message: types.Message):
     if message.from_user.id not in ADMIN_IDS:
@@ -204,33 +223,66 @@ async def warn_user(message: types.Message):
         except:
             pass
 
-# ========== ПЕРИОДИЧЕСКИЕ СООБЩЕНИЯ ==========
-MESSAGES = [
-    "➤ Ищете, с кем зарубиться в Dota 2?\nУ нас уютный Discord-сервер, где всегда найдётся пати, поддержка и хорошее настроение.\nЖдём тебя! Заходи в наш <a href='https://discord.gg/AtQypC6jK'>Discord-сервер</a>",
-    "➤ Не пропусти новые скидки и актуальные новости!\nПодписывайся на наш Telegram-канал «Тайны Торговца» — здесь всё появляется первым.\nЖми на <a href='https://t.me/StashShopkeepers'>ссылку</a> и будь в плюсе! 🔥",
-    "➤ Общайтесь, торгуйте, находите тиммейтов для Dota 2 — у нас уютно всем!\nА если заметите нарушение правил чата — не молчите, сразу сообщите @AIezha. Вместе сделаем сообщество лучше! 🤝"
-    "➤ Больше контента в других форматах!\nСмотри развлекательный контент по Dota 2 в наших YouTube и TikTok\n➤ <a href='https://youtube.com/@shopkeeperscache?si=aXYmxlKyxbo422Wb'>Перейти в YouTube</a>\n➤ <a href='https://www.tiktok.com/@shopkeeperscache?_r=1&_t=ZS-986eaBQ3xOn'>Перейти в TikTok</a>"
-]
+# ========== ФУНКЦИЯ ОТПРАВКИ С ФОТО ИЗ ЛОКАЛЬНЫХ ФАЙЛОВ ==========
+async def send_periodic_content(content):
+    """Отправляет сообщение с фото из локального файла или без него"""
+    try:
+        if content.get("local_file") and content.get("type") == "photo":
+            # Проверяем существование файла
+            if os.path.exists(content["local_file"]):
+                with open(content["local_file"], "rb") as photo:
+                    msg = await bot.send_photo(
+                        chat_id=GROUP_ID,
+                        photo=photo,
+                        caption=content["text"],
+                        parse_mode="HTML"
+                    )
+                return msg
+            else:
+                print(f"❌ Файл не найден: {content['local_file']}")
+                # Пробуем найти файл в корневой папке
+                for file in os.listdir('.'):
+                    if file.lower().startswith(os.path.splitext(content["local_file"])[0].lower()):
+                        with open(file, "rb") as photo:
+                            msg = await bot.send_photo(
+                                chat_id=GROUP_ID,
+                                photo=photo,
+                                caption=f"⚠️ Файл найден как: {file}\n\n{content['text']}",
+                                parse_mode="HTML"
+                            )
+                        return msg
+    except Exception as e:
+        print(f"Ошибка отправки фото: {e}")
+    
+    # Если ошибка - отправляем только текст
+    msg = await bot.send_message(
+        chat_id=GROUP_ID,
+        text=f"⚠️ Без фото\n\n{content['text']}",
+        parse_mode="HTML",
+        disable_web_page_preview=True
+    )
+    return msg
 
+# ========== ПЕРИОДИЧЕСКИЕ СООБЩЕНИЯ ==========
 async def periodic_messages():
     index = 0
-    last_msg_id = None
+    last_msg_ids = []
+    
     while True:
         try:
             now = datetime.now()
             if 5 <= now.hour < 19:
-                if last_msg_id:
+                for msg_id in last_msg_ids:
                     try:
-                        await bot.delete_message(GROUP_ID, last_msg_id)
+                        await bot.delete_message(GROUP_ID, msg_id)
                     except:
                         pass
-                msg = await bot.send_message(
-                    GROUP_ID,
-                    MESSAGES[index % len(MESSAGES)],
-                    parse_mode="HTML",
-                    disable_web_page_preview=True
-                )
-                last_msg_id = msg.message_id
+                last_msg_ids.clear()
+                
+                content = PERIODIC_CONTENT[index % len(PERIODIC_CONTENT)]
+                msg = await send_periodic_content(content)
+                last_msg_ids.append(msg.message_id)
+                
                 index += 1
                 await asyncio.sleep(7200)
             else:
@@ -239,7 +291,7 @@ async def periodic_messages():
             print(f"Ошибка в periodic: {e}")
             await asyncio.sleep(60)
 
-# ========== УТРЕННЕЕ ПРИВЕТСТВИЕ В 05:00 ==========
+# ========== УТРО/ВЕЧЕР ==========
 async def daily_greetings():
     last_greeting = None
     last_farewell = None
@@ -247,7 +299,6 @@ async def daily_greetings():
         try:
             now = datetime.now()
             
-            # Утро в 05:00
             if now.hour == 5 and now.minute == 0 and last_greeting != now.date():
                 await bot.send_message(
                     GROUP_ID,
@@ -260,7 +311,6 @@ async def daily_greetings():
                 last_greeting = now.date()
                 await asyncio.sleep(60)
             
-            # Вечер в 19:00
             if now.hour == 19 and now.minute == 0 and last_farewell != now.date():
                 await bot.send_message(
                     GROUP_ID,
@@ -278,14 +328,63 @@ async def daily_greetings():
             print(f"Ошибка в greetings: {e}")
             await asyncio.sleep(60)
 
+# ========== /TEST_ALL ==========
+@dp.message(Command('test_all'))
+async def test_all_messages(message: types.Message):
+    if message.from_user.id not in ADMIN_IDS:
+        await message.answer("⛔ Только для админов!")
+        return
+    
+    await message.answer("🔄 Тест всех сообщений...")
+    
+    for i, content in enumerate(PERIODIC_CONTENT, 1):
+        try:
+            if content.get("local_file") and content.get("type") == "photo":
+                if os.path.exists(content["local_file"]):
+                    with open(content["local_file"], "rb") as photo:
+                        await message.answer_photo(
+                            photo=photo,
+                            caption=f"📨 {i}:\n\n{content['text']}",
+                            parse_mode="HTML"
+                        )
+                else:
+                    await message.answer(
+                        f"📨 {i}: ❌ Файл не найден!\n\n{content['text']}",
+                        parse_mode="HTML"
+                    )
+            else:
+                await message.answer(
+                    f"📨 {i}: {content['text']}",
+                    parse_mode="HTML",
+                    disable_web_page_preview=True
+                )
+            await asyncio.sleep(1)
+        except Exception as e:
+            await message.answer(f"❌ Ошибка в {i}: {str(e)[:100]}")
+    
+    await message.answer("✅ Тест завершен!")
+
+# ========== ПОЛУЧЕНИЕ FILE_ID ==========
+@dp.message(F.photo)
+async def get_file_id(message: types.Message):
+    if message.from_user.id in ADMIN_IDS:
+        file_id = message.photo[-1].file_id
+        await message.reply(
+            f"📸 File ID:\n<code>{file_id}</code>",
+            parse_mode="HTML"
+        )
+
 # ========== ЗАПУСК ==========
 async def main():
-    print("🛡 Бот запущен!")
-    print("✅ Приветствие с ссылкой на профиль")
-    print("✅ /ban, /mute, /warn для админов")
-    print("✅ Анти-спам (бан за 3 сообщения за 5 секунд)")
-    print("✅ Утро в 05:00, Вечер в 19:00")
-    print("✅ Периодические сообщения каждые 2 часа")
+    print("=" * 50)
+    print("🛡 БОТ ЗАПУЩЕН!")
+    print("=" * 50)
+    print("✅ Используются локальные файлы:")
+    for i, content in enumerate(PERIODIC_CONTENT, 1):
+        print(f"  {i}. {content.get('local_file', 'Нет файла')}")
+    print("=" * 50)
+    print("✅ /test_all - тест всех сообщений")
+    print("=" * 50)
     
     asyncio.create_task(periodic_messages())
     asyncio.create_task(daily_greetings())
