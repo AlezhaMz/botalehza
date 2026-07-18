@@ -22,24 +22,23 @@ user_last_msg = {}
 user_warns = {}
 warnings = {}
 
-# ========== ПЕРИОДИЧЕСКИЕ СООБЩЕНИЯ С ВАШИМИ ЛОКАЛЬНЫМИ ФОТО ==========
-# ========== ПЕРИОДИЧЕСКИЕ СООБЩЕНИЯ С ВАШИМИ ЛОКАЛЬНЫМИ ФОТО ==========
+# ========== ПЕРИОДИЧЕСКИЕ СООБЩЕНИЯ С ВАШИМИ ФОТО ==========
 PERIODIC_CONTENT = [
     {
         "text": "➤ Больше контента в других форматах!\nСмотри развлекательный контент по Dota 2 в наших YouTube и TikTok аккаунтах.\n➤ Перейти в YouTube: https://youtube.com/@shopkeeperscache\n➤ Перейти в TikTok: https://www.tiktok.com/@shopkeeperscache",
-        "local_file": "1592303186729(j).jpg"
+        "local_file": "youtubeanditikotk.png"
     },
     {
-        "text": "➤ Не пропусти новые скидки и актуальные новости!\nПодписывайся на наш Telegram-канал «Тайны Торговца» — здесь всё появляется первым.\nЖми на ссылку и будь в плюсе! 🔥\nhttps://t.me/StashShopkeepers",
-        "local_file": "1592303186729.png"
+        "text": "➤ Не пропусти новые скидки и актуальные новости!\nПодписывайся на наш Telegram-канал «Тайны Торговца» — здесь всё появляется первым.\nЖми на ссылку и будь в плюсе! 🔥\n➤ https://t.me/StashShopkeepers",
+        "local_file": "tgkanal.jpg"
     },
     {
         "text": "➤ Общайтесь, торгуйте, находите тиммейтов для Dota 2 — у нас уютно всем!\nА если заметите нарушение правил чата — не молчите, сразу сообщите @AIezha. Вместе сделаем сообщество лучше! 🤝",
-        "local_file": "Screenshot 2026-07-18 173906.png"
+        "local_file": "obsaites.png"
     },
     {
         "text": "➤ Ищете, с кем зарубиться в Dota 2?\nУ нас уютный Discord-сервер, где всегда найдётся пати, поддержка и хорошее настроение.\nЖдём тебя! Заходи: https://discord.gg/AtQypC6jK",
-        "local_file": "Screenshot 2026-07-18 174019.png"
+        "local_file": "ds.png"
     }
 ]
 
@@ -220,12 +219,11 @@ async def warn_user(message: types.Message):
         except:
             pass
 
-# ========== ФУНКЦИЯ ОТПРАВКИ С ФОТО ИЗ ЛОКАЛЬНЫХ ФАЙЛОВ ==========
+# ========== ФУНКЦИЯ ОТПРАВКИ С ФОТО ==========
 async def send_periodic_content(content):
-    """Отправляет сообщение с фото из локального файла или без него"""
+    """Отправляет сообщение с фото из локального файла"""
     try:
-        if content.get("local_file") and content.get("type") == "photo":
-            # Проверяем существование файла
+        if content.get("local_file"):
             if os.path.exists(content["local_file"]):
                 with open(content["local_file"], "rb") as photo:
                     msg = await bot.send_photo(
@@ -237,24 +235,13 @@ async def send_periodic_content(content):
                 return msg
             else:
                 print(f"❌ Файл не найден: {content['local_file']}")
-                # Пробуем найти файл в корневой папке
-                for file in os.listdir('.'):
-                    if file.lower().startswith(os.path.splitext(content["local_file"])[0].lower()):
-                        with open(file, "rb") as photo:
-                            msg = await bot.send_photo(
-                                chat_id=GROUP_ID,
-                                photo=photo,
-                                caption=f"⚠️ Файл найден как: {file}\n\n{content['text']}",
-                                parse_mode="HTML"
-                            )
-                        return msg
     except Exception as e:
         print(f"Ошибка отправки фото: {e}")
     
     # Если ошибка - отправляем только текст
     msg = await bot.send_message(
         chat_id=GROUP_ID,
-        text=f"⚠️ Без фото\n\n{content['text']}",
+        text=content["text"],
         parse_mode="HTML",
         disable_web_page_preview=True
     )
@@ -332,26 +319,20 @@ async def test_all_messages(message: types.Message):
         await message.answer("⛔ Только для админов!")
         return
     
-    await message.answer("🔄 Тест всех сообщений...")
+    await message.answer("🔄 Тест всех сообщений с фото...")
     
     for i, content in enumerate(PERIODIC_CONTENT, 1):
         try:
-            if content.get("local_file") and content.get("type") == "photo":
-                if os.path.exists(content["local_file"]):
-                    with open(content["local_file"], "rb") as photo:
-                        await message.answer_photo(
-                            photo=photo,
-                            caption=f"📨 {i}:\n\n{content['text']}",
-                            parse_mode="HTML"
-                        )
-                else:
-                    await message.answer(
-                        f"📨 {i}: ❌ Файл не найден!\n\n{content['text']}",
+            if content.get("local_file") and os.path.exists(content["local_file"]):
+                with open(content["local_file"], "rb") as photo:
+                    await message.answer_photo(
+                        photo=photo,
+                        caption=f"📨 {i}:\n\n{content['text']}",
                         parse_mode="HTML"
                     )
             else:
                 await message.answer(
-                    f"📨 {i}: {content['text']}",
+                    f"📨 {i}:\n\n{content['text']}",
                     parse_mode="HTML",
                     disable_web_page_preview=True
                 )
@@ -360,6 +341,20 @@ async def test_all_messages(message: types.Message):
             await message.answer(f"❌ Ошибка в {i}: {str(e)[:100]}")
     
     await message.answer("✅ Тест завершен!")
+
+# ========== КОМАНДА ДЛЯ ПРОСМОТРА ФАЙЛОВ ==========
+@dp.message(Command('list_files'))
+async def list_files(message: types.Message):
+    if message.from_user.id not in ADMIN_IDS:
+        return
+    
+    files = os.listdir('.')
+    text = "📁 Файлы в папке бота:\n\n"
+    for f in sorted(files):
+        if os.path.isfile(f):
+            size = os.path.getsize(f)
+            text += f"• {f} ({size} байт)\n"
+    await message.answer(text[:4000])
 
 # ========== ПОЛУЧЕНИЕ FILE_ID ==========
 @dp.message(F.photo)
@@ -381,6 +376,7 @@ async def main():
         print(f"  {i}. {content.get('local_file', 'Нет файла')}")
     print("=" * 50)
     print("✅ /test_all - тест всех сообщений")
+    print("✅ /list_files - список файлов")
     print("=" * 50)
     
     asyncio.create_task(periodic_messages())
