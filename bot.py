@@ -24,23 +24,29 @@ user_last_msg = {}
 user_warns = {}
 warnings = {}
 
-# ========== ПЕРИОДИЧЕСКИЕ СООБЩЕНИЯ С ИЗОБРАЖЕНИЯМИ ==========
+# ========== ВАШ FILE_ID ==========
+PHOTO_1 = "AgACAgIAAyEFAATag5SzAAJcEWpbwBfRU_d2Xt7ep9khEBTSu0ivAALEGmsb0szYSrjC4egU1-QRAQADAgADeAADPQQ"
+PHOTO_2 = "AgACAgIAAyEFAATag5SzAAJcE2pbwG-94ZnFIjWKlJxqWEcmzFVVAALFGmsb0szYStdVM3dCKHIlAQADAgADeAADPQQ"
+PHOTO_3 = "AgACAgIAAyEFAATag5SzAAJcFWpbwIx5YjYhv-bziCsowKQoxpFdAALGGmsb0szYSvVuzTH8ZpKBAQADAgADeQADPQQ"
+PHOTO_4 = "AgACAgIAAyEFAATag5SzAAJcF2pbwLQBwd2W4EY_eZPzaKa4iTYAA8caaxvSzNhKKLMsL1sruBEBAAMCAAN5AAM9BA"
+
+# ========== ПЕРИОДИЧЕСКИЕ СООБЩЕНИЯ С ФОТО ==========
 PERIODIC_CONTENT = [
     {
         "text": "➤ Больше контента в других форматах!\nСмотри развлекательный контент по Dota 2 в наших YouTube и TikTok аккаунтах.\n➤ <a href='https://youtube.com/@shopkeeperscache?si=aXYmxlKyxbo422Wb'>Перейти в YouTube</a>\n➤ <a href='https://www.tiktok.com/@shopkeeperscache?_r=1&_t=ZS-986eaBQ3xOn'>Перейти в TikTok</a>",
-        "local_file": "youtubeanditiktok.png"
+        "file_id": PHOTO_1
     },
     {
         "text": "➤ Не пропусти новые скидки и актуальные новости!\nПодписывайся на наш Telegram-канал «Тайны Торговца» — здесь всё появляется первым.\nЖми на <a href='https://t.me/StashShopkeepers'>ссылку</a> и будь в плюсе! 🔥",
-        "local_file": "tgkanal.jpg"
+        "file_id": PHOTO_2
     },
     {
         "text": "➤ Общайтесь, торгуйте, находите тиммейтов для Dota 2 — у нас уютно всем!\nА если заметите нарушение правил чата — не молчите, сразу сообщите @AIezha. Вместе сделаем сообщество лучше! 🤝",
-        "local_file": "obsaites.png"
+        "file_id": PHOTO_3
     },
     {
         "text": "➤ Ищете, с кем зарубиться в Dota 2?\nУ нас уютный Discord-сервер, где всегда найдётся пати, поддержка и хорошее настроение.\nЖдём тебя! Заходи в наш <a href='https://discord.gg/AtQypC6jK'>Discord-сервер</a>",
-        "local_file": "ds.png"
+        "file_id": PHOTO_4
     }
 ]
 
