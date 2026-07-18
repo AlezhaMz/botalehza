@@ -23,26 +23,23 @@ user_warns = {}
 warnings = {}
 
 # ========== ПЕРИОДИЧЕСКИЕ СООБЩЕНИЯ С ВАШИМИ ЛОКАЛЬНЫМИ ФОТО ==========
+# ========== ПЕРИОДИЧЕСКИЕ СООБЩЕНИЯ С ВАШИМИ ЛОКАЛЬНЫМИ ФОТО ==========
 PERIODIC_CONTENT = [
     {
         "text": "➤ Больше контента в других форматах!\nСмотри развлекательный контент по Dota 2 в наших YouTube и TikTok аккаунтах.\n➤ Перейти в YouTube: https://youtube.com/@shopkeeperscache\n➤ Перейти в TikTok: https://www.tiktok.com/@shopkeeperscache",
-        "local_file": "1592303186729(j).jpg",
-        "type": "photo"
+        "local_file": "1592303186729(j).jpg"
     },
     {
         "text": "➤ Не пропусти новые скидки и актуальные новости!\nПодписывайся на наш Telegram-канал «Тайны Торговца» — здесь всё появляется первым.\nЖми на ссылку и будь в плюсе! 🔥\nhttps://t.me/StashShopkeepers",
-        "local_file": "1592303186729.png",
-        "type": "photo"
+        "local_file": "1592303186729.png"
     },
     {
         "text": "➤ Общайтесь, торгуйте, находите тиммейтов для Dota 2 — у нас уютно всем!\nА если заметите нарушение правил чата — не молчите, сразу сообщите @AIezha. Вместе сделаем сообщество лучше! 🤝",
-        "local_file": "Screenshot 2026-07-18 173906.png",
-        "type": "photo"
+        "local_file": "Screenshot 2026-07-18 173906.png"
     },
     {
         "text": "➤ Ищете, с кем зарубиться в Dota 2?\nУ нас уютный Discord-сервер, где всегда найдётся пати, поддержка и хорошее настроение.\nЖдём тебя! Заходи: https://discord.gg/AtQypC6jK",
-        "local_file": "Screenshot 2026-07-18 174019.png",
-        "type": "photo"
+        "local_file": "Screenshot 2026-07-18 174019.png"
     }
 ]
 
