@@ -5,31 +5,33 @@ from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 import os
 
-# ========== НАСТРОЙКИ ==========
-BOT_TOKEN = "8762058651:AAG_rvoUoqFY3Be13ueYk32I-2Jriwxecn4"
-GROUP_ID = -1003666056371
-ADMIN_IDS = [1487417026]
-# =================================
+# ========== НАСТРОЙКИ (ЗАМЕНИ НА СВОИ) ==========
+BOT_TOKEN = "8762058651:AAG_rvoUoqFY3Be13ueYk32I-2Jriwxecn4"  # Получи у @BotFather
+GROUP_ID = -1003666056371        # ID твоей группы
+ADMIN_IDS = [1487417026]         # Твой Telegram ID
+# ====================================================
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
-# ========== ДАННЫЕ ==========
+# ========== ДАННЫЕ ДЛЯ СТАТИСТИКИ ==========
 daily_messages = defaultdict(int)
 daily_new_members = 0
 today = datetime.now().date()
+
+# ========== ДАННЫЕ ДЛЯ АНТИ-СПАМА ==========
 user_last_msg = {}
 user_warns = {}
 warnings = {}
 
-# ========== ПЕРИОДИЧЕСКИЕ СООБЩЕНИЯ С ВАШИМИ ФОТО ==========
+# ========== ПЕРИОДИЧЕСКИЕ СООБЩЕНИЯ С ИЗОБРАЖЕНИЯМИ ==========
 PERIODIC_CONTENT = [
     {
-        "text": "➤ Больше контента в других форматах!\nСмотри развлекательный контент по Dota 2 в наших YouTube и TikTok аккаунтах.\n➤ Перейти в YouTube: https://youtube.com/@shopkeeperscache\n➤ Перейти в TikTok: https://www.tiktok.com/@shopkeeperscache",
-        "local_file": "youtubeanditikotk.png"
+        "text": "➤ Больше контента в других форматах!\nСмотри развлекательный контент по Dota 2 в наших YouTube и TikTok аккаунтах.\n➤ <a href='https://youtube.com/@shopkeeperscache?si=aXYmxlKyxbo422Wb'>Перейти в YouTube</a>\n➤ <a href='https://www.tiktok.com/@shopkeeperscache?_r=1&_t=ZS-986eaBQ3xOn'>Перейти в TikTok</a>",
+        "local_file": "youtubeanditiktok.png"
     },
     {
-        "text": "➤ Не пропусти новые скидки и актуальные новости!\nПодписывайся на наш Telegram-канал «Тайны Торговца» — здесь всё появляется первым.\nЖми на ссылку и будь в плюсе! 🔥\n➤ https://t.me/StashShopkeepers",
+        "text": "➤ Не пропусти новые скидки и актуальные новости!\nПодписывайся на наш Telegram-канал «Тайны Торговца» — здесь всё появляется первым.\nЖми на <a href='https://t.me/StashShopkeepers'>ссылку</a> и будь в плюсе! 🔥",
         "local_file": "tgkanal.jpg"
     },
     {
@@ -37,7 +39,7 @@ PERIODIC_CONTENT = [
         "local_file": "obsaites.png"
     },
     {
-        "text": "➤ Ищете, с кем зарубиться в Dota 2?\nУ нас уютный Discord-сервер, где всегда найдётся пати, поддержка и хорошее настроение.\nЖдём тебя! Заходи: https://discord.gg/AtQypC6jK",
+        "text": "➤ Ищете, с кем зарубиться в Dota 2?\nУ нас уютный Discord-сервер, где всегда найдётся пати, поддержка и хорошее настроение.\nЖдём тебя! Заходи в наш <a href='https://discord.gg/AtQypC6jK'>Discord-сервер</a>",
         "local_file": "ds.png"
     }
 ]
@@ -57,6 +59,7 @@ async def welcome_new_members(message: types.Message):
         if user.id == bot.id:
             continue
         
+        # Блокировка ботов
         if user.is_bot:
             try:
                 await bot.ban_chat_member(GROUP_ID, user.id)
@@ -67,6 +70,7 @@ async def welcome_new_members(message: types.Message):
         
         daily_new_members += 1
         
+        # Приветствие с ссылкой на профиль
         greeting = (
             f"👋 Приветствуем <a href='tg://user?id={user.id}'>{user.full_name}</a>, в Лавке Главного Торговца! Можешь пообщаться с нами в чате или\n"
             f"➤ <a href='https://t.me/ShopkeepersCache/17163'>Узнать о нас подробнее</a>\n"
@@ -78,6 +82,7 @@ async def welcome_new_members(message: types.Message):
         except:
             pass
     
+    # Удаляем системное сообщение
     try:
         await message.delete()
     except:
@@ -91,7 +96,7 @@ async def delete_left_message(message: types.Message):
     except:
         pass
 
-# ========== ПОДСЧЁТ СООБЩЕНИЙ ==========
+# ========== ПОДСЧЁТ СООБЩЕНИЙ ДЛЯ СТАТИСТИКИ ==========
 @dp.message(F.text)
 async def count_messages(message: types.Message):
     if message.chat.id != GROUP_ID:
@@ -130,7 +135,7 @@ async def anti_spam(message: types.Message):
             user_warns[user_id] = 0
     user_last_msg[user_id] = now
 
-# ========== /MUTE ==========
+# ========== /mute - ОТКЛЮЧИТЬ ЗВУК НА 5 МИНУТ ==========
 @dp.message(Command('mute'))
 async def mute_user(message: types.Message):
     if message.from_user.id not in ADMIN_IDS:
@@ -164,7 +169,7 @@ async def mute_user(message: types.Message):
     except Exception as e:
         await message.answer(f"❌ Ошибка: {str(e)[:100]}")
 
-# ========== /BAN ==========
+# ========== /ban - ЗАБАНИТЬ ==========
 @dp.message(Command('ban'))
 async def ban_user(message: types.Message):
     if message.from_user.id not in ADMIN_IDS:
@@ -188,7 +193,7 @@ async def ban_user(message: types.Message):
     except Exception as e:
         await message.answer(f"❌ Ошибка: {str(e)[:100]}")
 
-# ========== /WARN ==========
+# ========== /warn - ПРЕДУПРЕЖДЕНИЕ ==========
 @dp.message(Command('warn'))
 async def warn_user(message: types.Message):
     if message.from_user.id not in ADMIN_IDS:
@@ -219,22 +224,19 @@ async def warn_user(message: types.Message):
         except:
             pass
 
-# ========== ФУНКЦИЯ ОТПРАВКИ С ФОТО ==========
+# ========== ФУНКЦИЯ ОТПРАВКИ С ИЗОБРАЖЕНИЯМИ ==========
 async def send_periodic_content(content):
-    """Отправляет сообщение с фото из локального файла"""
+    """Отправляет сообщение с изображением из локального файла"""
     try:
-        if content.get("local_file"):
-            if os.path.exists(content["local_file"]):
-                with open(content["local_file"], "rb") as photo:
-                    msg = await bot.send_photo(
-                        chat_id=GROUP_ID,
-                        photo=photo,
-                        caption=content["text"],
-                        parse_mode="HTML"
-                    )
-                return msg
-            else:
-                print(f"❌ Файл не найден: {content['local_file']}")
+        if content.get("local_file") and os.path.exists(content["local_file"]):
+            with open(content["local_file"], "rb") as photo:
+                msg = await bot.send_photo(
+                    chat_id=GROUP_ID,
+                    photo=photo,
+                    caption=content["text"],
+                    parse_mode="HTML"
+                )
+            return msg
     except Exception as e:
         print(f"Ошибка отправки фото: {e}")
     
@@ -256,6 +258,7 @@ async def periodic_messages():
         try:
             now = datetime.now()
             if 5 <= now.hour < 19:
+                # Удаляем предыдущие сообщения
                 for msg_id in last_msg_ids:
                     try:
                         await bot.delete_message(GROUP_ID, msg_id)
@@ -275,7 +278,7 @@ async def periodic_messages():
             print(f"Ошибка в periodic: {e}")
             await asyncio.sleep(60)
 
-# ========== УТРО/ВЕЧЕР ==========
+# ========== УТРЕННЕЕ ПРИВЕТСТВИЕ В 05:00 ==========
 async def daily_greetings():
     last_greeting = None
     last_farewell = None
@@ -283,6 +286,7 @@ async def daily_greetings():
         try:
             now = datetime.now()
             
+            # Утро в 05:00
             if now.hour == 5 and now.minute == 0 and last_greeting != now.date():
                 await bot.send_message(
                     GROUP_ID,
@@ -295,6 +299,7 @@ async def daily_greetings():
                 last_greeting = now.date()
                 await asyncio.sleep(60)
             
+            # Вечер в 19:00
             if now.hour == 19 and now.minute == 0 and last_farewell != now.date():
                 await bot.send_message(
                     GROUP_ID,
@@ -312,7 +317,7 @@ async def daily_greetings():
             print(f"Ошибка в greetings: {e}")
             await asyncio.sleep(60)
 
-# ========== /TEST_ALL ==========
+# ========== КОМАНДА ДЛЯ ТЕСТА ==========
 @dp.message(Command('test_all'))
 async def test_all_messages(message: types.Message):
     if message.from_user.id not in ADMIN_IDS:
@@ -371,7 +376,13 @@ async def main():
     print("=" * 50)
     print("🛡 БОТ ЗАПУЩЕН!")
     print("=" * 50)
-    print("✅ Используются локальные файлы:")
+    print("✅ Приветствие с ссылкой на профиль")
+    print("✅ /ban, /mute, /warn для админов")
+    print("✅ Анти-спам (бан за 3 сообщения за 5 секунд)")
+    print("✅ Утро в 05:00, Вечер в 19:00")
+    print("✅ Периодические сообщения с фото каждые 2 часа")
+    print("")
+    print("📁 Используются файлы:")
     for i, content in enumerate(PERIODIC_CONTENT, 1):
         print(f"  {i}. {content.get('local_file', 'Нет файла')}")
     print("=" * 50)
